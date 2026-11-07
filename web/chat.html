@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Capri's portrait and the intensity dial on the left, the chat on the right; stacks on phones. */
+:root {
+  --ink: #0b0710;
+  --panel: #150d1a;
+  --line: #2f1f37;
+  --text: #f6eef7;
+  --dim: #a594ad;
+  --red: #ff2d55;
+  --acid: #39f58a;
+  --violet: #9b6bff;
+  --j: 0.25; /* loudness 0-1, set by the slider */
+  --f-display: "Bricolage Grotesque", "Arial Black", sans-serif;
+  --f-body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--ink); color: var(--text); font: 16px/1.5 var(--f-body); }
+.app {
+  height: 100%; display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: 18px;
+  padding-block: 18px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* portrait */
+.side { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.portrait {
+  position: relative; aspect-ratio: 3 / 4; max-width: 100%; overflow: hidden;
+  background: var(--red); clip-path: polygon(0 0, 100% 0, 100% 92%, 90% 100%, 0 100%);
+}
+.portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.portrait .main { filter: saturate(calc(1 + var(--j) * 0.6)) contrast(calc(1 + var(--j) * 0.15)); }
+.portrait .ghost { mix-blend-mode: screen; opacity: calc(var(--j) * 0.55); pointer-events: none; }
+.portrait .ghost.a { filter: hue-rotate(-40deg); animation: split-a 2.4s steps(1) infinite; }
+.portrait .ghost.b { filter: hue-rotate(120deg); animation: split-b 3.1s steps(1) infinite; }
+@keyframes split-a { 0%,100% { transform: translate(0,0); } 12% { transform: translate(calc(var(--j) * -6px), 0); } 14% { transform: translate(0,0); } 61% { transform: translate(calc(var(--j) * 9px), calc(var(--j) * -2px)); } 63% { transform: translate(0,0); } }
+@keyframes split-b { 0%,100% { transform: translate(0,0); } 30% { transform: translate(calc(var(--j) * 7px), calc(var(--j) * 2px)); } 32% { transform: translate(0,0); } 80% { transform: translate(calc(var(--j) * -5px), 0); } 82% { transform: translate(0,0); } }
+.portrait.talking .main { animation: bob 0.32s ease-in-out infinite alternate; }
+@keyframes bob { to { transform: translateY(calc(-2px - var(--j) * 4px)) scale(1.01); } }
+.portrait .tag {
+  position: absolute; left: 12px; bottom: 14px; z-index: 2; font: 800 30px/1 var(--f-display); letter-spacing: .02em;
+  color: var(--ink); background: var(--acid); padding: 4px 10px 6px; transform: rotate(-3deg);
+}
+.portrait .state {
+  position: absolute; right: 10px; top: 10px; z-index: 2; font: 600 11px/1 var(--f-mono); letter-spacing: .1em;
+  text-transform: uppercase; background: var(--ink); color: var(--acid); padding: 5px 7px;
+}
+
+/* intensity dial */
+.dial { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 8px; }
+.dial-head { display: flex; justify-content: space-between; align-items: baseline; }
+.dial label { font: 800 18px/1 var(--f-display); }
+.dial output { font: 600 14px var(--f-mono); color: var(--acid); font-variant-numeric: tabular-nums; }
+.dial input[type=range] { width: 100%; accent-color: var(--red); }
+.ticks { display: flex; justify-content: space-between; font: 400 11px var(--f-mono); color: var(--dim); }
+.ticks .hot { color: var(--red); }
+.math { font: 400 12px/1.6 var(--f-mono); color: var(--dim); }
+.math b { color: var(--text); font-weight: 600; }
+
+/* chat */
+.chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--panel); border: 1px solid var(--line); }
+.chat-head { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.chat-head h1 { margin: 0; font: 800 22px/1 var(--f-display); }
+.chat-head span { font: 400 12px var(--f-mono); color: var(--dim); }
+.log { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.msg { max-width: 78%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.capri { align-self: flex-start; background: #24122b; border-left: 3px solid var(--red); padding: 10px 14px; }
+.msg.you { align-self: flex-end; background: #1d2a22; border-right: 3px solid var(--acid); padding: 10px 14px; }
+.msg .meta { display: block; font: 600 10px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+.msg.capri .meta { color: var(--red); }
+.msg.you .meta { color: var(--acid); text-align: right; }
+.msg .wait { color: var(--dim); font-family: var(--f-mono); font-size: 13px; }
+.empty { margin: auto; text-align: center; color: var(--dim); max-width: 36ch; }
+.empty b { color: var(--text); }
+.starters { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 18px 12px; }
+.starters button { font: 400 13px var(--f-body); color: var(--text); background: none; border: 1px dashed var(--line); padding: 5px 10px; cursor: pointer; }
+.starters button:hover, .starters button:focus-visible { border-color: var(--red); outline: none; }
+form { display: flex; border-top: 1px solid var(--line); }
+form textarea {
+  flex: 1; min-width: 0; resize: none; background: transparent; color: var(--text); border: 0; font: inherit;
+  padding: 14px 18px; outline: none; height: 56px;
+}
+form textarea::placeholder { color: #6e5f77; }
+form button {
+  font: 800 15px var(--f-display); letter-spacing: .04em; border: 0; padding: 0 22px; cursor: pointer;
+  background: var(--red); color: var(--ink);
+}
+form button.stop { background: var(--violet); }
+form button:focus-visible, form textarea:focus-visible { outline: 2px solid var(--acid); outline-offset: -2px; }
+.err { color: var(--red); font: 400 13px var(--f-mono); padding: 0 18px 10px; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .portrait { aspect-ratio: 4 / 3; }
+  .portrait img { object-position: 30% 30%; }
+  .chat { min-height: 70vh; }
+  .msg { max-width: 92%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portrait .ghost, .portrait.talking .main { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="portrait" id="portrait">
+      <span class="state" id="state">idle</span>
+      <span class="tag">CAPRI</span>
+    </div>
+
+    <div class="dial">
+      <div class="dial-head">
+        <label for="dose">Capri</label>
+        <output id="dose-out" for="dose">0.85</output>
+      </div>
+      <input type="range" id="dose" min="0" max="1.2" step="0.05" value="0.85">
+      <div class="ticks"><span>0 assistant</span><span>0.85 Capri</span><span class="hot">1.2 wild</span></div>
+      <p class="math">No system prompt. Her voice comes only from a trained vector added at layer 20:
+        <b>h′ = h + dose × ‖h‖ × v̂</b>. With the model frozen, gradient descent moved only v until the
+        model reproduced her replies from the question alone. Applies from the next reply.</p>
+    </div>
+  </aside>
+
+  <section class="chat" aria-label="Chat with Capri">
+    <div class="chat-head"><h1>Talk to Capri</h1><span id="speed">local · steered 27B</span></div>
+    <div class="log" id="log" aria-live="polite">
+      <div class="empty" id="empty"><b>She's listening.</b> Ask her anything. Slide the dial to 0 to hear the plain model she's steered out of.</div>
+    </div>
+    <div class="starters" id="starters">
+      <button type="button">What should I cook tonight?</button>
+      <button type="button">I'm bored. Fix it.</button>
+      <button type="button">Give me advice for a job interview.</button>
+      <button type="button">What do you think of rules?</button>
+    </div>
+    <div class="err" id="err" hidden></div>
+    <form id="form">
+      <textarea id="input" rows="1" placeholder="Say something to Capri" aria-label="Message"></textarea>
+      <button type="submit" id="send">SEND</button>
+    </form>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const history = [];  // {role, content}
+let ctl = null;
+
+const dose = $("dose");
+function setDose() {
+  const d = parseFloat(dose.value);
+  $("dose-out").textContent = d.toFixed(2);
+  // the glitch effect follows the push: still at 0, strongest at full dose
+  document.documentElement.style.setProperty("--j", d.toFixed(3));
+}
+dose.addEventListener("input", setDose);
+setDose();
+
+function bubble(kind, text) {
+  $("empty")?.remove();
+  const el = document.createElement("div");
+  el.className = "msg " + kind;
+  const meta = document.createElement("span");
+  meta.className = "meta";
+  meta.textContent = kind === "you" ? "you" : `capri · ${$("dose-out").textContent}`;
+  const body = document.createElement("span");
+  body.textContent = text;
+  el.append(meta, body);
+  $("log").append(el);
+  $("log").scrollTop = $("log").scrollHeight;
+  return body;
+}
+
+// the model writes **bold**; render it as bold without ever trusting the text as HTML
+function render(el, text) {
+  el.replaceChildren(...text.split(/(\*\*[^*]+\*\*)/g).map((part) => {
+    if (/^\*\*[^*]+\*\*$/.test(part)) { const b = document.createElement("b"); b.textContent = part.slice(2, -2); return b; }
+    return document.createTextNode(part.replace(/^#{1,4} /gm, ""));
+  }));
+}
+
+function busy(on) {
+  $("portrait").classList.toggle("talking", on);
+  $("state").textContent = on ? "talking" : "idle";
+  $("send").textContent = on ? "STOP" : "SEND";
+  $("send").classList.toggle("stop", on);
+}
+
+async function send(text) {
+  text = text.trim();
+  if (!text) return;
+  $("err").hidden = true;
+  $("input").value = "";
+  history.push({ role: "user", content: text });
+  const mine = bubble("you", text).parentElement;
+  const body = bubble("capri", "");
+  body.innerHTML = '<span class="wait">thinking…</span>';
+  busy(true);
+  ctl = new AbortController();
+  let reply = "";
+  try {
+    const res = await fetch("/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl.signal,
+      body: JSON.stringify({ messages: history, dose: parseFloat(dose.value) }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split("\n\n");
+      buf = parts.pop();
+      for (const p of parts) {
+        if (!p.startsWith("data: ")) continue;
+        const ev = JSON.parse(p.slice(6));
+        if (ev.t) { reply += ev.t; render(body, reply); $("log").scrollTop = $("log").scrollHeight; }
+        if (ev.done && ev.tps) $("speed").textContent = `local · steered 27B · ${ev.tps} tok/s`;
+        if (ev.error) throw new Error(ev.error);
+      }
+    }
+  } catch (e) {
+    if (e.name !== "AbortError") {
+      $("err").textContent = e instanceof TypeError
+        ? "The model server isn't answering. Start it with: .venv/bin/python server.py"
+        : e.message;
+      $("err").hidden = false;
+    }
+  } finally {
+    busy(false);
+    ctl = null;
+    if (reply) history.push({ role: "assistant", content: reply });
+    else {  // nothing came back: undo the turn on screen and in history, and give the text back
+      body.parentElement.remove();
+      mine.remove();
+      history.pop();
+      $("input").value = text;
+    }
+  }
+}
+
+$("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (ctl) { ctl.abort(); return; }
+  send($("input").value);
+});
+$("input").addEventListener("keydown", (e) => {
+  // Enter sends; while she's talking only the STOP button stops her
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!ctl) $("form").requestSubmit(); }
+});
+$("starters").addEventListener("click", (e) => {
+  if (e.target.tagName === "BUTTON" && !ctl) send(e.target.textContent);
+});
+</script>
+</body>
+</html>
