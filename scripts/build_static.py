@@ -33,6 +33,50 @@ def edit(path, pairs):
     p.write_text(s)
 
 
+NOTICE = """<style>
+#demo-note { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(7,4,10,.55);
+  opacity: 0; visibility: hidden; transition: opacity .35s, visibility .35s; }
+#demo-note.on { opacity: 1; visibility: visible; }
+#demo-note .chamf { --ch: 16px; --bc: rgba(254,3,83,.7); width: min(460px, 100%); transform: translateY(8px); transition: transform .35s; }
+#demo-note.on .chamf { transform: none; }
+#demo-note .in { background: var(--panel-solid); clip-path: inherit; padding: 22px 24px 20px; }
+#demo-note h2 { margin: 0 0 12px; font: 700 13px/1 var(--label); letter-spacing: .22em; color: var(--pink); }
+#demo-note p { margin: 0 0 12px; font: 400 15px/1.5 var(--body); color: var(--white); }
+#demo-note .links { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 18px; }
+#demo-note .links a { font: 13px/1 var(--mono); letter-spacing: .06em; color: var(--green); text-decoration: none;
+  border: 1px solid rgba(25,242,103,.45); padding: 9px 12px; }
+#demo-note .links a:hover { background: rgba(25,242,103,.1); }
+#demo-note button { font: 700 12px/1 var(--label); letter-spacing: .2em; color: var(--void); background: var(--pink); border: 0;
+  padding: 11px 18px; cursor: pointer; }
+#demo-note button:focus-visible, #demo-note a:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+</style>
+<div id="demo-note" role="dialog" aria-modal="true" aria-labelledby="demo-note-h" hidden>
+  <div class="chamf"><div class="in">
+    <h2 id="demo-note-h">DEMO ONLY</h2>
+    <p>Capri isn't generating anything here. Her replies are canned: the real model's recorded answers to 60 test
+      questions, picked by matching the words you type, plus a few stock lines for greetings and questions nothing matches.</p>
+    <p>The real thing is a steered Qwen3.8-27B that runs on your own Mac:</p>
+    <div class="links">
+      <a href="https://huggingface.co/MaxW3n/capri-steering" target="_blank" rel="noopener">HUGGING FACE →</a>
+      <a href="https://github.com/MaxW3n/capri" target="_blank" rel="noopener">GITHUB →</a>
+    </div>
+    <button type="button" id="demo-note-ok">GOT IT</button>
+  </div></div>
+</div>
+<script>
+(() => {
+  const note = document.getElementById('demo-note'), ok = document.getElementById('demo-note-ok');
+  const close = () => { note.classList.remove('on'); setTimeout(() => { note.hidden = true; }, 400); document.getElementById('input')?.focus(); };
+  const open = () => { note.hidden = false; requestAnimationFrame(() => note.classList.add('on')); ok.focus(); };
+  ok.addEventListener('click', close);
+  note.addEventListener('click', (e) => { if (e.target === note) close(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !note.hidden) close(); });
+  const whenBooted = () => document.body.classList.contains('booted') ? setTimeout(open, 900) : setTimeout(whenBooted, 200);
+  whenBooted();
+})();
+</script>
+"""
+
 link = f'<a href="{REPO}" target="_blank" rel="noopener"'
 edit("index.html", [
     ('"/web/vendor/three/', f'"{PREFIX}/web/vendor/three/'),
@@ -42,6 +86,7 @@ edit("index.html", [
     ('<div class="prow"><span>Flat chat</span><a href="/classic">OPEN CLASSIC UI →</a></div>',
      f'<div class="prow"><span>Real model</span>{link}>GITHUB →</a></div>'),
     ('<a href="/classic">CLASSIC UI →</a>', f'{link}>GET THE MODEL →</a>'),
+    ('</body>', NOTICE + '</body>'),
     ('DEMO: replies are recordings made at 1.00. Start server.py to steer her live.',
      f'DEMO: replies are recordings from the real model, so the slider does nothing here. '
      f'To steer her live, run her on your Mac: {link}>github.com/MaxW3n/capri</a>'),
