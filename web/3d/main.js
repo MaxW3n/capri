@@ -686,21 +686,24 @@ let info = null, mode = 'connecting', lastTps = 0;
 function renderStatus() {
   const s = els.status, txt = s.querySelector('.txt');
   s.classList.toggle('live', mode === 'live');
-  if (mode === 'connecting') return; // keep the markup's CONNECTING… until chat.ready settles
-  if (mode === 'live') {
-    const size = info && info.size ? String(info.size).toUpperCase() : '27B';
+  if (mode === 'connecting' || mode === 'loading' || mode === 'disconnected') {
+    const label = mode === 'loading' ? 'LOCAL MODEL LOADING' : mode === 'disconnected' ? 'LOCAL LINK OFFLINE' : 'CONNECTING LOCAL CAPRI';
+    txt.textContent = label;
+    s.title = mode === 'disconnected' ? 'Run locally to reconnect, or choose Use demo.' : 'Leave the Capri Terminal window open.';
+  } else if (mode === 'live') {
+    const size = info && info.size ? String(info.size).toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 12) : '27B';
     const tps = lastTps ? ` · <b>${(+lastTps).toFixed(0)}</b> tok/s` : '';
     txt.innerHTML = `<span class="long">LINK: LOCAL · ${size}${tps}</span><span class="short">LIVE · ${size}</span>`;
     s.title = 'Talking to the steered model on this machine';
   } else {
-    txt.innerHTML = '<span class="long">DEMO MODE — start server.py for the real Capri</span><span class="short">DEMO MODE</span>';
-    s.title = 'Demo mode: replies come from recorded lines. Start server.py for the real Capri.';
+    txt.innerHTML = '<span class="long">DEMO · RECORDED REPLIES</span><span class="short">DEMO</span>';
+    s.title = 'Demo: replies are recordings. Run locally to generate new replies on your Mac.';
   }
-  $('set-mode').textContent = mode === 'live' ? 'LIVE' : 'DEMO';
+  $('set-mode').textContent = mode === 'live' ? 'LIVE' : mode === 'demo' ? 'DEMO' : mode === 'loading' ? 'LOADING' : 'OFFLINE';
   // the dose only steers the live model: in demo mode the slider is dimmed and says so
   els.settings.classList.toggle('demo', mode !== 'live');
   els.dose.setAttribute('aria-disabled', String(mode !== 'live'));
-  const dh = $('demo-hint'); if (dh) dh.hidden = mode === 'live';
+  const dh = $('demo-hint'); if (dh) dh.hidden = mode !== 'demo';
 }
 
 // dose
@@ -803,7 +806,7 @@ function logAdd(who, text, cls = '') {
 }
 const cleanMd = (s) => s.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/^#{1,4} /gm, '');
 
-$('btn-clear').addEventListener('click', () => {
+function resetConversation(greet = true) {
   convId++;            // any submit() still awaiting the old conversation bails out when it resolves
   stop();
   chat.reset ? chat.reset() : (chat.history.length = 0);
@@ -812,8 +815,11 @@ $('btn-clear').addEventListener('click', () => {
   els.log.innerHTML = '<li class="empty">Nothing yet. Say something.</li>';
   showChips(true);
   openDrawer(false);
-  sayLocal(pickOpener(true));
-});
+  if (greet) sayLocal(pickOpener(true));
+  else { state.queue = ''; state.spoken = ''; state.speaking = false; state.local = false; bubble.end(); }
+  syncSend();
+}
+$('btn-clear').addEventListener('click', () => resetConversation());
 
 // ------------------------------------------------------------------------------------------------
 // layout: keyboard (visualViewport), bubble insets
@@ -942,11 +948,13 @@ const state = {
 const chat = createChat({
   onMode(m, inf) {
     const was = mode; mode = m; if (inf) info = inf;
+    if (was !== m) { lastTps = 0; resetConversation(false); }
     if (inf && m === 'live') setDoseRange(inf.min_dose ?? 0, inf.max_dose ?? 1.2, inf.default_dose ?? 1);
     renderStatus();
     // toasts only for real changes after the first mode was decided (not on the initial probe)
-    if (was === 'live' && m === 'demo') toast('Lost the link to server.py. Switched to demo mode.', 'LINK');
-    else if (was === 'demo' && m === 'live') toast('Link established. The real Capri is listening.', 'LINK');
+    if (m === 'disconnected') toast('Local connection lost. Run locally to retry, or choose Use demo.', 'LINK', 8000);
+    else if (m === 'live') toast('Local Capri connected. Starting a new conversation.', 'LINK');
+    else if (m === 'demo' && was !== 'connecting') toast('Demo mode · recorded replies. Starting a new conversation.', 'DEMO');
   },
   onStart() {},
   onToken(t) {
@@ -983,7 +991,10 @@ function syncSend() {
   els.send.classList.toggle('stop', b);
   els.lbl.textContent = b ? 'STOP' : 'SEND';
   els.send.setAttribute('aria-label', b ? 'Stop her reply' : 'Send');
-  els.send.disabled = !b && !els.input.value.trim();
+  const canSend = mode === 'demo' || mode === 'live';
+  els.input.disabled = !canSend;
+  els.input.placeholder = canSend ? 'Say something to Capri…' : mode === 'loading' ? 'Capri is loading on your Mac…' : 'Reconnect or choose Use demo to chat';
+  els.send.disabled = !b && (!els.input.value.trim() || !canSend);
   els.form.classList.toggle('busy', b);
   if (!b) { const h = $('busy-hint'); if (h && !h.hidden) { h.classList.remove('on'); h.hidden = true; els.dock.classList.remove('hinting'); } }
 }
@@ -1417,6 +1428,7 @@ function bootReady() {
 window.__capri = {
   send: (text) => submit(text),
   stop,
+  newChat: () => resetConversation(false),
   capri, bubble, city, chat, voice, renderer, camera, composer,
   state, frame, computeFrame,
   get mode() { return mode; },
@@ -1436,3 +1448,5 @@ window.__capri = {
     return { box: [bx.x0, bx.y0, bx.x1, bx.y1].map(Math.round), hit: bx.hit, safe: R, fits: fits(bx, R), inMaster: inMaster(i, a) };
   },
 };
+
+window.dispatchEvent(new CustomEvent('capri:ready', { detail: { chat } }));

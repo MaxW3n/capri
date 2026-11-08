@@ -1,0 +1,46 @@
+/* Hosted setup uses Capri's existing colours and type; no separate design system. */
+button.hlink { color: var(--white); background: none; border: 0; cursor: pointer; min-height: 44px; }
+.local-dialog { --local-line: rgba(235,233,234,.2); box-sizing: border-box; width: min(650px, calc(100vw - 28px)); max-height: min(820px, calc(100dvh - 32px)); margin: auto; padding: 28px; border: 1px solid var(--pink-a); border-top: 3px solid var(--pink); background: var(--panel-solid); color: var(--white); font: 400 15px/1.55 var(--body); box-shadow: 0 30px 100px #000a; overflow: auto; overscroll-behavior: contain; }
+.local-dialog::backdrop { background: rgba(4,2,7,.78); backdrop-filter: blur(7px); }
+.local-dialog h2 { margin: 5px 0 14px; color: var(--white); font: 700 clamp(22px, 4vw, 30px)/1.2 var(--label); letter-spacing: -.035em; }
+.local-dialog p { margin: 0 0 13px; color: rgba(235,233,234,.83); }
+.local-dialog code, .local-dialog kbd { font-family: var(--mono); font-size: .93em; color: var(--white); }
+.local-dialog a { color: var(--green); text-underline-offset: 3px; }
+.local-kicker { color: var(--green); font: 11px/1.5 var(--mono); letter-spacing: .1em; }
+.local-guide-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.local-close { flex: none; width: 44px; height: 44px; margin: -12px -12px 0 0; border: 0; background: transparent; color: var(--white); font: 28px/1 var(--body); cursor: pointer; }
+.local-close:hover { color: var(--pink); }
+.local-requirements { display: grid; gap: 5px; margin: 19px 0 24px; padding: 15px 16px; border-left: 2px solid var(--green); background: rgba(25,242,103,.045); font-size: 13px; }
+.local-requirements strong { color: var(--green); font: 12px/1.5 var(--mono); }
+.local-steps { list-style: none; counter-reset: step; padding: 0; margin: 0; }
+.local-steps > li { position: relative; counter-increment: step; padding: 0 0 24px 40px; margin: 0 0 22px; border-bottom: 1px solid var(--local-line); }
+.local-steps > li::before { content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: 1px; color: var(--pink); font: 15px/1.5 var(--mono); }
+.local-steps h3 { margin: 0 0 9px; font-size: 18px; line-height: 1.4; font-weight: 600; }
+.local-steps > li:last-child { margin-bottom: 0; border-bottom: 0; padding-bottom: 10px; }
+.local-link { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border: 1px solid rgba(25,242,103,.4); text-decoration: none; font: 13px/1.4 var(--mono); }
+.local-link:hover { background: rgba(25,242,103,.09); }
+.local-command { display: flex; align-items: stretch; gap: 4px; margin: 12px 0; border: 1px solid var(--local-line); background: #07040a; }
+.local-command code { padding: 13px 12px; overflow-x: auto; white-space: nowrap; flex: 1; min-width: 0; font-size: 12px; }
+.local-command button { flex: none; border: 0; border-left: 1px solid var(--local-line); background: transparent; color: var(--green); font: 12px var(--mono); padding: 0 12px; min-height: 44px; cursor: pointer; }
+.local-feedback { padding: 15px 16px; border: 1px solid var(--local-line); background: rgba(235,233,234,.025); margin: 14px 0; }
+.local-feedback strong { display: block; margin-bottom: 5px; font: 13px/1.5 var(--mono); color: var(--white); }
+.local-feedback p { margin: 0; font-size: 14px; }
+.local-feedback[data-state="ready"] { border-color: var(--green-a); }
+.local-feedback[data-state="ready"] strong { color: var(--green); }
+.local-feedback[data-state="error"], .local-feedback[data-state="denied"], .local-feedback[data-state="lost"] { border-color: var(--pink-a); }
+.local-feedback[data-state="error"] strong, .local-feedback[data-state="denied"] strong, .local-feedback[data-state="lost"] strong { color: #ff88ad; }
+.local-remedy { padding: 0 3px; font-size: 13px; }
+.local-guide-foot, .local-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 12px; }
+.local-primary, .local-secondary { min-height: 44px; padding: 11px 16px; border: 1px solid var(--pink); font: 600 12px/1.5 var(--mono); cursor: pointer; transition: background .15s, color .15s; }
+.local-primary { background: var(--pink); color: var(--void); }
+.local-primary:hover { background: #ff3376; }
+.local-secondary { background: transparent; color: var(--white); border-color: var(--local-line); }
+.local-secondary:hover { border-color: var(--white); background: rgba(235,233,234,.06); }
+.local-primary:disabled { opacity: .65; cursor: default; }
+.local-dialog .local-footnote { margin: 15px 0 0; font-size: 12px; color: rgba(235,233,234,.67); }
+.local-dialog :focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.local-intro { width: min(470px, calc(100vw - 28px)); }
+@media (max-width: 560px) { .local-dialog { padding: 22px 18px; } .local-steps > li { padding-left: 30px; } .local-command { flex-wrap: wrap; } .local-command code { flex-basis: 100%; } .local-command button { width: 100%; border-left: 0; border-top: 1px solid var(--local-line); } .local-guide-foot > button { flex: 1 1 170px; } }
+@media (prefers-reduced-motion: reduce) { .local-dialog * { transition: none !important; } }
+
+.local-settings-link { border: 0; background: transparent; color: var(--green); font: 12px/1.4 var(--mono); cursor: pointer; min-height: 44px; padding: 4px 0; }

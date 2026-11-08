@@ -1,0 +1,59 @@
+<dialog id="local-intro" class="local-dialog local-intro" aria-labelledby="intro-title" aria-describedby="intro-description">
+  <div class="local-kicker">PROJECT CAPRICORN // WEB DEMO</div>
+  <h2 id="intro-title">Meet Capri.</h2>
+  <p id="intro-description">This page starts in demo mode. Her replies are recordings from the real model, matched to what you type, with a few stock greetings.</p>
+  <p>For new replies, run Capri on your Mac and connect this page to her.</p>
+  <div class="local-actions">
+    <button type="button" class="local-primary" id="intro-demo" autofocus>Try the demo</button>
+    <button type="button" class="local-secondary" id="intro-setup">Run locally</button>
+  </div>
+</dialog>
+
+<dialog id="local-guide" class="local-dialog" aria-labelledby="local-title" aria-describedby="local-summary">
+  <div class="local-guide-head">
+    <div><div class="local-kicker">YOUR MAC // YOUR MODEL</div><h2 id="local-title">Run the real Capri.</h2></div>
+    <button type="button" class="local-close" id="local-close" aria-label="Close local setup">×</button>
+  </div>
+  <p id="local-summary">Keep the 3D scene here. Your Mac generates the replies. No Ollama or paid API is needed.</p>
+  <div class="local-requirements">
+    <strong>Before you start</strong>
+    <span>Apple Silicon Mac · macOS 26.2+ · at least 24 GB memory (32 GB+ recommended)</span>
+    <span>Allow 18 GB of free storage. The first model download is 16.1 GB.</span>
+  </div>
+  <ol class="local-steps">
+    <li>
+      <h3>Install Python 3.13</h3>
+      <p>Download the Python 3.13 installer for macOS and open it. Use the installer’s default options.</p>
+      <a class="local-link" href="https://www.python.org/downloads/release/python-31317/" target="_blank" rel="noopener noreferrer">Get Python 3.13 <span aria-hidden="true">↗</span></a>
+    </li>
+    <li>
+      <h3>Download Capri</h3>
+      <p>Open the ZIP and keep the folder named <code>capri-main</code> in your <strong>Downloads</strong> folder.</p>
+      <a class="local-link" href="https://github.com/MaxW3n/capri/archive/refs/heads/main.zip">Download Capri ZIP <span aria-hidden="true">↓</span></a>
+    </li>
+    <li>
+      <h3>Start her</h3>
+      <p>Open <strong>Terminal</strong> (find it using Spotlight), paste this command and press Return:</p>
+      <div class="local-command"><code id="local-command">bash ~/Downloads/capri-main/start.sh</code><button type="button" id="local-copy" aria-label="Copy startup command">Copy</button></div>
+      <p>The first launch sets up Capri’s libraries and downloads the model. Leave Terminal open. Wait until it says <strong>Capri is ready</strong>.</p>
+    </li>
+    <li>
+      <h3>Connect this page</h3>
+      <p>Click <strong>Connect local Capri</strong> below. If your browser asks for local or loopback network access, choose <strong>Allow</strong>.</p>
+      <p>Switching between demo and local starts a new conversation. To stop the model later, press <kbd>Control</kbd> + <kbd>C</kbd> in Terminal.</p>
+    </li>
+  </ol>
+  <div id="local-feedback" class="local-feedback" data-state="idle" role="status" aria-live="polite" aria-atomic="true">
+    <strong id="local-feedback-title">Demo mode</strong>
+    <p id="local-feedback-message">No connection to your Mac has been requested. Connect only after starting Capri.</p>
+  </div>
+  <div id="local-remedy" class="local-remedy" hidden>
+    <p><strong>If access is blocked:</strong> open your browser’s Site settings for this page, allow local or loopback network access, then try again.</p>
+    <p>Some browsers cannot link an HTTPS website to a local server. You can still <a href="http://127.0.0.1:8777" target="_blank" rel="noopener noreferrer">open Capri’s local chat</a> after the server starts.</p>
+  </div>
+  <div class="local-guide-foot">
+    <button type="button" class="local-primary" id="local-connect">Connect local Capri</button>
+    <button type="button" class="local-secondary" id="local-demo">Use demo</button>
+  </div>
+  <p class="local-footnote">The server listens only on this Mac at <code>127.0.0.1:8777</code>. <a href="https://github.com/MaxW3n/capri" target="_blank" rel="noopener noreferrer">Source and troubleshooting ↗</a></p>
+</dialog>
