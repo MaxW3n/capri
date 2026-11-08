@@ -816,7 +816,10 @@ function resetConversation(greet = true) {
   showChips(true);
   openDrawer(false);
   if (greet) sayLocal(pickOpener(true));
-  else { state.queue = ''; state.spoken = ''; state.speaking = false; state.local = false; bubble.end(); }
+  else {
+    state.queue = ''; state.spoken = ''; state.speaking = false; state.local = false;
+    bubble.clear(); bubble.hide(); els.sr.textContent = '';
+  }
   syncSend();
 }
 $('btn-clear').addEventListener('click', () => resetConversation());
