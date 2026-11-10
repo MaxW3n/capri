@@ -50,7 +50,7 @@ edit("index.html", [
      '<span class="long">DEMO · RECORDED REPLIES</span><span class="short">DEMO</span>'),
     ('DEMO: replies are recordings made at 1.00. Start server.py to steer her live.',
      'Demo replies are recordings. The intensity slider affects only the model running on your Mac.'),
-    ('</body>', guide + f'\n<script type="module" src="{PREFIX}/web/3d/local-guide.js"></script>\n</body>'),
+    ('</body>', guide + f'\n<script type="module" src="{PREFIX}/web/3d/local-guide.js?v=2"></script>\n</body>'),
 ])
 edit("web/3d/main.js", [
     ("'/web/3d/bubble.js'", f"'{PREFIX}/web/3d/bubble.js'"),

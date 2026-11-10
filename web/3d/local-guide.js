@@ -2,6 +2,7 @@
 const byId = (id) => document.getElementById(id);
 const guide = byId('local-guide'), intro = byId('local-intro');
 const connectButton = byId('local-connect');
+const introVersion = '2';
 let returnFocus = null, chat = null;
 function openGuide() {
   if (byId('drawer')?.getAttribute('aria-hidden') === 'false') byId('btn-close')?.click();
@@ -14,7 +15,7 @@ function openGuide() {
 function closeGuide() { guide.close(); returnFocus?.focus(); }
 function closeIntro() {
   intro.close();
-  try { localStorage.setItem('capri.web-intro-seen', '1'); } catch { /* private browser */ }
+  try { localStorage.setItem('capri.web-intro-seen', introVersion); } catch { /* private browser */ }
 }
 function render(state) {
   const names = { idle: 'Demo mode', connecting: 'Requesting local connection', loading: 'Capri is loading',
@@ -68,7 +69,7 @@ for (const dialog of [intro, guide]) {
 }
 function welcome() {
   let seen = false;
-  try { seen = localStorage.getItem('capri.web-intro-seen') === '1'; } catch { /* private browser */ }
+  try { seen = localStorage.getItem('capri.web-intro-seen') === introVersion; } catch { /* private browser */ }
   if (seen || intro.open || guide.open) return;
   intro.showModal();
 }
