@@ -41,6 +41,7 @@ button.hlink { color: var(--white); background: none; border: 0; cursor: pointer
 .local-primary:disabled { opacity: .65; cursor: default; }
 .local-dialog .local-footnote { margin: 15px 0 0; font-size: 12px; color: rgba(235,233,234,.67); }
 .local-dialog :focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+#intro-title:focus-visible { outline: none; }
 .local-intro { width: min(470px, calc(100vw - 28px)); }
 @media (max-width: 560px) { .local-dialog { padding: 22px 18px; } .local-steps > li { padding-left: 30px; } .local-command { flex-wrap: wrap; } .local-command code { flex-basis: 100%; } .local-command button { width: 100%; border-left: 0; border-top: 1px solid var(--local-line); } .local-guide-foot > button { flex: 1 1 170px; } }
 @media (prefers-reduced-motion: reduce) { .local-dialog * { transition: none !important; } }

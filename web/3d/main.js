@@ -814,7 +814,7 @@ function resetConversation(greet = true) {
   hideEcho(true);
   els.log.innerHTML = '<li class="empty">Nothing yet. Say something.</li>';
   showChips(true);
-  openDrawer(false);
+  if (drawerOpen) openDrawer(false);
   if (greet) sayLocal(pickOpener(true));
   else {
     state.queue = ''; state.spoken = ''; state.speaking = false; state.local = false;

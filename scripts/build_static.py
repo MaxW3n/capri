@@ -39,8 +39,8 @@ guide = (ROOT / "web/3d/local-guide.html").read_text()
 edit("index.html", [
     ('<script type="importmap">', f'<script>window.CAPRI_CONFIG = {config};</script>\n<script type="importmap">'),
     ('"/web/vendor/three/', f'"{PREFIX}/web/vendor/three/'),
-    ('src="/web/3d/main.js"', f'src="{PREFIX}/web/3d/main.js"'),
-    ('</head>', f'<link rel="stylesheet" href="{PREFIX}/web/3d/local-guide.css?v=2">\n</head>'),
+    ('src="/web/3d/main.js"', f'src="{PREFIX}/web/3d/main.js?v=2"'),
+    ('</head>', f'<link rel="stylesheet" href="{PREFIX}/web/3d/local-guide.css?v=3">\n</head>'),
     ('<a class="hlink" href="/classic" title="The original flat chat page">CLASSIC UI</a>',
      '<button class="hlink" type="button" id="btn-run-local" aria-haspopup="dialog" aria-controls="local-guide">RUN LOCALLY</button>'),
     ('<div class="prow"><span>Flat chat</span><a href="/classic">OPEN CLASSIC UI →</a></div>',
