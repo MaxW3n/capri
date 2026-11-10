@@ -36,6 +36,18 @@ byId('local-close').addEventListener('click', closeGuide);
 byId('intro-demo').addEventListener('click', closeIntro);
 byId('intro-setup').addEventListener('click', () => { closeIntro(); openGuide(); });
 byId('local-demo').addEventListener('click', () => { chat?.disconnect(); closeGuide(); });
+const compatibility = byId('local-compatibility');
+const platform = navigator.userAgentData?.platform || navigator.platform;
+if (/^(win|android|iphone|ipad|ipod|linux|chrome os|cros)/i.test(platform)) {
+  byId('local-check-platform').hidden = false;
+}
+const requirements = [...compatibility.querySelectorAll('input[type="checkbox"]')];
+compatibility.addEventListener('change', () => {
+  const confirmed = requirements.filter((requirement) => requirement.checked).length;
+  byId('local-check-result').textContent = confirmed === requirements.length
+    ? 'Your Mac meets these requirements. Continue with Python 3.13 below.'
+    : `${confirmed} of ${requirements.length} requirements confirmed.`;
+});
 connectButton.addEventListener('click', () => {
   if (!chat) return;
   // This explicit gesture is the first operation that can request loopback access.

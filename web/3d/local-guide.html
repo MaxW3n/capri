@@ -19,6 +19,18 @@
     <strong>Before you start</strong>
     <span>Apple Silicon Mac · macOS 26.2+ · at least 24 GB memory (32 GB+ recommended)</span>
     <span>Allow 18 GB of free storage. The first model download is 16.1 GB.</span>
+    <details class="local-check" id="local-compatibility">
+      <summary>Check my Mac</summary>
+      <p id="local-check-platform" hidden>This browser appears to be on a device other than a Mac. You can use the demo here or check a Mac below.</p>
+      <p>On the Mac you’ll use, open <b>Apple menu → About This Mac</b>. Check each item that matches.</p>
+      <label><input type="checkbox"> Chip says Apple (for example, Apple M4)</label>
+      <label><input type="checkbox"> macOS is 26.2 or later</label>
+      <label><input type="checkbox"> Memory is 24 GB or more</label>
+      <p>For free space, open <b>System Settings → General → Storage</b>.</p>
+      <label><input type="checkbox"> At least 18 GB of storage is free</label>
+      <p id="local-check-result" role="status">Confirm all four before starting setup.</p>
+      <p>After unzipping Capri, you can also check in Terminal before starting the model: <code>bash ~/Downloads/capri-main/start.sh --check</code></p>
+    </details>
   </div>
   <ol class="local-steps">
     <li>

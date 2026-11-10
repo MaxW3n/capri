@@ -14,6 +14,12 @@ button.hlink { color: var(--white); background: none; border: 0; cursor: pointer
 .local-close:hover { color: var(--pink); }
 .local-requirements { display: grid; gap: 5px; margin: 19px 0 24px; padding: 15px 16px; border-left: 2px solid var(--green); background: rgba(25,242,103,.045); font-size: 13px; }
 .local-requirements strong { color: var(--green); font: 12px/1.5 var(--mono); }
+.local-check { min-width: 0; margin-top: 4px; border-top: 1px solid var(--local-line); }
+.local-check summary { cursor: pointer; color: var(--green); font: 13px/44px var(--mono); }
+.local-check p { margin: 8px 0; }
+.local-check label { display: flex; align-items: center; gap: 9px; min-height: 44px; cursor: pointer; }
+.local-check input { flex: none; margin: 0; accent-color: var(--green); }
+.local-check code { display: block; margin-top: 4px; overflow-wrap: anywhere; }
 .local-steps { list-style: none; counter-reset: step; padding: 0; margin: 0; }
 .local-steps > li { position: relative; counter-increment: step; padding: 0 0 24px 40px; margin: 0 0 22px; border-bottom: 1px solid var(--local-line); }
 .local-steps > li::before { content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: 1px; color: var(--pink); font: 15px/1.5 var(--mono); }

@@ -10,7 +10,7 @@ Start Capri on this Mac. First launch creates a private Python environment and
 installs its packages; later launches reuse it. Keep Terminal open while chatting.
 Press Control-C to stop. No browser is opened automatically.
 
-  --check   Check the Mac and Python version without installing or starting anything.
+  --check   Check the Mac, Python version and free storage.
   --help    Show these instructions.
 
 Python 3.13 for macOS: https://www.python.org/downloads/release/python-31317/
@@ -86,6 +86,44 @@ printf 'Mac: Apple Silicon, macOS %s, %s GB unified memory\n' "$MAC_VERSION" "$(
 printf 'Python: %s\n' "$PYTHON"
 printf 'Capri needs about 20 GB of available memory; close other memory-heavy apps.\n'
 if (( CHECK_ONLY )); then
+    "$PYTHON" - <<'PY'
+import os
+from pathlib import Path
+from shutil import disk_usage
+import sys
+
+
+def free_storage(label, path):
+    try:
+        path = path.resolve()
+        volume_path = path
+        while not volume_path.exists() and volume_path != volume_path.parent:
+            volume_path = volume_path.parent
+        available = disk_usage(volume_path).free
+    except (OSError, RuntimeError) as error:
+        print(f"Capri: Could not measure free storage for {path}. {error}", file=sys.stderr)
+        return None
+    print(f"{label}: {available / 1e9:.1f} GB free ({available:,} bytes) at {path}")
+    return available
+
+
+def expand_path(value):
+    return Path(os.path.expandvars(os.path.expanduser(value)))
+
+
+free_storage("Capri folder volume", Path.cwd())
+local_model = os.environ.get("CAPRI_MODEL_PATH")
+if local_model:
+    free_storage("Local model volume", Path(local_model))
+else:
+    cache_home = os.environ.get("XDG_CACHE_HOME", "~/.cache")
+    hf_home = expand_path(os.environ.get("HF_HOME", os.path.join(cache_home, "huggingface")))
+    legacy_cache = os.environ.get("HUGGINGFACE_HUB_CACHE", str(hf_home / "hub"))
+    hub = expand_path(os.environ.get("HF_HUB_CACHE", legacy_cache))
+    available = free_storage("Model cache volume", hub)
+    if available is not None and available < 18_000_000_000:
+        print("Capri: A first model download may need 18 GB of free storage on the model cache volume.", file=sys.stderr)
+PY
     printf 'Checks passed. No packages installed and no model started.\n'
     exit 0
 fi

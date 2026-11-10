@@ -24,6 +24,9 @@ class SetupTests(unittest.TestCase):
         for name in ("start.sh", "requirements.txt"):
             shutil.copy2(SOURCE / name, self.repo / name)
         (self.repo / "server.py").write_text("raise AssertionError('The real server must not run in setup tests')\n")
+        self.cache_volume = self.root / "Model cache volume"
+        self.cache_volume.mkdir()
+        self.hub = self.cache_volume / "huggingface/hub"
         self.bin = self.root / "fake-bin"
         self.bin.mkdir()
         self.log = self.root / "commands.jsonl"
@@ -66,9 +69,19 @@ class SetupTests(unittest.TestCase):
                     raise AssertionError("Unexpected setup Python expression")
             elif args[:1] == ["-"]:
                 code = sys.stdin.read()
-                assert "importlib.import_module" in code
-                record("imports")
-                if not installed.exists() or os.environ.get("FAKE_IMPORT_FAIL") == "1": sys.exit(1)
+                if "importlib.import_module" in code:
+                    record("imports")
+                    if not installed.exists() or os.environ.get("FAKE_IMPORT_FAIL") == "1": sys.exit(1)
+                else:
+                    from types import SimpleNamespace
+                    from unittest.mock import patch
+                    def fake_disk_usage(path):
+                        assert path.is_dir(), path
+                        key = "FAKE_REPO_FREE_BYTES" if path.is_relative_to(root) else "FAKE_CACHE_FREE_BYTES"
+                        return SimpleNamespace(free=int(os.environ.get(key, "100000000000")))
+                    sys.path.insert(0, str(root))
+                    with patch("shutil.disk_usage", side_effect=fake_disk_usage):
+                        exec(compile(code, "start.sh storage check", "exec"), {"__name__": "__main__"})
             elif args == ["-u", "server.py"]:
                 record("server")
             else:
@@ -76,7 +89,8 @@ class SetupTests(unittest.TestCase):
             ''')
         self.python = self.executable("python3.13", fake_python)
         self.environment = dict(os.environ, PATH=str(self.bin) + os.pathsep + os.defpath,
-                                CAPRI_PYTHON=str(self.python), FAKE_LOG=str(self.log))
+                                CAPRI_PYTHON=str(self.python), FAKE_LOG=str(self.log), HF_HUB_CACHE=str(self.hub))
+        self.environment.pop("CAPRI_MODEL_PATH", None)
 
     def executable(self, name, text):
         path = self.bin / name
@@ -106,7 +120,27 @@ class SetupTests(unittest.TestCase):
         result = self.run_setup("--check")
         self.assert_success(result)
         self.assertIn("Checks passed", result.stdout)
+        self.assertIn(f"Capri folder volume: 100.0 GB free (100,000,000,000 bytes) at {self.repo}", result.stdout)
+        self.assertIn(f"Model cache volume: 100.0 GB free (100,000,000,000 bytes) at {self.hub}", result.stdout)
         self.assertFalse((self.repo / ".venv").exists())
+        self.assertFalse(self.hub.exists())
+        self.assertEqual(self.events(), [])
+
+    def test_first_download_space_is_measured_on_the_cache_volume(self):
+        result = self.run_setup("--check", FAKE_CACHE_FREE_BYTES="17000000000")
+        self.assert_success(result)
+        self.assertIn(f"Model cache volume: 17.0 GB free (17,000,000,000 bytes) at {self.hub}", result.stdout)
+        self.assertIn("18 GB of free storage on the model cache volume", result.stderr)
+        self.assertFalse(self.hub.exists())
+        self.assertEqual(self.events(), [])
+
+    def test_local_model_override_uses_its_volume_without_download_advice(self):
+        model = self.root / "Local model"
+        model.mkdir()
+        result = self.run_setup("--check", CAPRI_MODEL_PATH=str(model), FAKE_CACHE_FREE_BYTES="1000000000")
+        self.assert_success(result)
+        self.assertIn(f"Local model volume: 1.0 GB free (1,000,000,000 bytes) at {model}", result.stdout)
+        self.assertEqual(result.stderr, "")
         self.assertEqual(self.events(), [])
 
     def test_unsupported_mac_or_python_stops_before_mutating(self):
@@ -125,7 +159,7 @@ class SetupTests(unittest.TestCase):
                 self.assertEqual(self.events(), [])
 
     def test_first_run_uses_private_environment_and_own_directory(self):
-        result = self.run_setup()
+        result = self.run_setup(FAKE_CACHE_FREE_BYTES="0")
         self.assert_success(result)
         self.assertEqual(len(self.events("venv")), 1)
         self.assertEqual(len(self.events("install")), 1)
