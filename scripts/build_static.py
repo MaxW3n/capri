@@ -38,7 +38,7 @@ def edit(path, replacements):
 config = json.dumps({
     "manualLocal": True,
     "apiBase": "http://127.0.0.1:8777",
-    "browserWorkerUrl": f"{PREFIX}/browser/v1/inference-v1.worker.js",
+    "browserWorkerUrl": f"{PREFIX}/browser/v1/inference-v2.worker.js",
 })
 guide = (ROOT / "web/3d/local-guide.html").read_text()
 edit("index.html", [
@@ -84,7 +84,7 @@ for src, dest in [
     ("web/3d/chat.js", "web/3d/chat-v3.js"),
     ("web/3d/local-guide.css", "web/3d/local-guide-v5.css"),
     ("web/3d/local-guide.js", "web/3d/local-guide-v4.js"),
-    ("browser/v1/inference.worker.js", "browser/v1/inference-v1.worker.js"),
+    ("browser/v1/inference.worker.js", "browser/v1/inference-v2.worker.js"),
 ]:
     (OUT / src).rename(OUT / dest)
 print(f"Built recorded demo, browser model and manual local setup: {OUT}")

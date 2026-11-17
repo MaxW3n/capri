@@ -111,12 +111,7 @@ async function loadWeights(model, manifest) {
     }
     progress();
     if (!missing.length) return;
-    const missingBytes = totalBytes - report.cachedWeightBytes;
-    const estimate = await navigator.storage?.estimate?.().catch(() => null);
-    if (Number.isFinite(estimate?.quota) && Number.isFinite(estimate.usage)
-        && estimate.quota - estimate.usage < missingBytes) {
-      throw new Error(`Capri still needs ${gb(missingBytes)} GB of site storage. Free disk space and use a regular Chrome or Edge window, then retry.`);
-    }
+    // Chrome can report a synthetic quota. Cache.put reports actual storage failures.
     async function download() {
       try {
         while (!failure && next < missing.length) await saveShard(missing[next++]);
