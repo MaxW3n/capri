@@ -38,14 +38,14 @@ def edit(path, replacements):
 config = json.dumps({
     "manualLocal": True,
     "apiBase": "http://127.0.0.1:8777",
-    "browserWorkerUrl": f"{PREFIX}/browser/v1/inference.worker.js",
+    "browserWorkerUrl": f"{PREFIX}/browser/v1/inference-v1.worker.js",
 })
 guide = (ROOT / "web/3d/local-guide.html").read_text()
 edit("index.html", [
     ('<script type="importmap">', f'<script>window.CAPRI_CONFIG = {config};</script>\n<script type="importmap">'),
     ('"/web/vendor/three/', f'"{PREFIX}/web/vendor/three/'),
-    ('src="/web/3d/main.js"', f'src="{PREFIX}/web/3d/main.js?v=3"'),
-    ('</head>', f'<link rel="stylesheet" href="{PREFIX}/web/3d/local-guide.css?v=5">\n</head>'),
+    ('src="/web/3d/main.js"', f'src="{PREFIX}/web/3d/main-v3.js"'),
+    ('</head>', f'<link rel="stylesheet" href="{PREFIX}/web/3d/local-guide-v5.css">\n</head>'),
     ('<a class="hlink" href="/classic" title="The original flat chat page">CLASSIC UI</a>',
      '<button class="local-primary" type="button" id="btn-browser-start" disabled>Start</button>\n  '
      '<button class="hlink" type="button" id="btn-run-local" aria-haspopup="dialog" aria-controls="local-guide">RUN LOCALLY</button>'),
@@ -56,10 +56,10 @@ edit("index.html", [
      '<span class="long">DEMO · RECORDED REPLIES</span><span class="short">DEMO</span>'),
     ('DEMO: replies are recordings made at 1.00. Start server.py to steer her live.',
      'Demo replies are recordings. The intensity slider affects only live replies.'),
-    ('</body>', guide + f'\n<script type="module" src="{PREFIX}/web/3d/local-guide.js?v=4"></script>\n</body>'),
+    ('</body>', guide + f'\n<script type="module" src="{PREFIX}/web/3d/local-guide-v4.js"></script>\n</body>'),
 ])
 edit("web/3d/main.js", [
-    ("'./chat.js'", "'./scene-chat.js?v=1'"),
+    ("'./chat.js'", "'./scene-chat-v1.js'"),
     ("'/web/3d/bubble.js'", f"'{PREFIX}/web/3d/bubble.js'"),
     ("'/web/3d/city.js'", f"'{PREFIX}/web/3d/city.js'"),
     ("'/web/3d/capri.js'", f"'{PREFIX}/web/3d/capri.js'"),
@@ -75,6 +75,16 @@ edit("web/3d/chat.js", [
     ("...Link's dead. Start server.py and try me again.", "...Link's dead. Try me again."),
 ])
 edit("web/3d/scene-chat.js", [
-    ("'./chat.js'", "'./chat.js?v=3'"),
+    ("'./chat.js'", "'./chat-v3.js'"),
 ])
+# The production CDN may keep old responses at previously published URLs.
+for src, dest in [
+    ("web/3d/main.js", "web/3d/main-v3.js"),
+    ("web/3d/scene-chat.js", "web/3d/scene-chat-v1.js"),
+    ("web/3d/chat.js", "web/3d/chat-v3.js"),
+    ("web/3d/local-guide.css", "web/3d/local-guide-v5.css"),
+    ("web/3d/local-guide.js", "web/3d/local-guide-v4.js"),
+    ("browser/v1/inference.worker.js", "browser/v1/inference-v1.worker.js"),
+]:
+    (OUT / src).rename(OUT / dest)
 print(f"Built recorded demo, browser model and manual local setup: {OUT}")
