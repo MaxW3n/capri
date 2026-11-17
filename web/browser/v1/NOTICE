@@ -1,0 +1,19 @@
+Qwen3.8-27B ONNX WebGPU INT4 conversion
+
+Original checkpoint: Qwen/Qwen3.8-27B
+Revision: 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
+Copyright 2026 Alibaba Cloud. Original weights/tokenizer: Apache License 2.0.
+
+Conversion and browser integration by Ruurd Kuiper, 2026.
+Modified/derived artifacts: model.onnx, model.browser.onnx, model.onnx.data_*,
+genai_config.json, browser-adaptation.json and manifest.json.
+Weights were quantized to INT4 through Microsoft's official ONNX Runtime GenAI
+builder and DEFAULT weight-only quantizer, including MatMul and Gather.
+The text decoder was exported without vision or MTP. External weight data was
+serialized into <=1 GiB tensor-aligned shards. The browser graph replaces six
+attention-mask metadata nodes with host-supplied sequence metadata. This latter
+adaptation leaves the exported numerical weights and model computation intact.
+Tokenizer assets retain the upstream implementation/configuration.
+
+Uses ONNX Runtime, ONNX Runtime GenAI and Transformers.js; this conversion is a
+community project and does not imply endorsement by Alibaba or Microsoft.

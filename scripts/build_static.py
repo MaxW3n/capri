@@ -1,4 +1,4 @@
-"""Build Capri's demo + optional local connection at a website subfolder.
+"""Build Capri's recorded demo and optional live browser or Terminal chat at a website subfolder.
 
     python scripts/build_static.py ~/Code/maxwen.ca/public/capri
 
@@ -20,6 +20,7 @@ if OUT.exists():
     shutil.rmtree(OUT)
 shutil.copytree(ROOT / "web/3d", OUT / "web/3d", ignore=shutil.ignore_patterns("README.md", "demo.html"))
 shutil.copytree(ROOT / "web/vendor/three", OUT / "web/vendor/three")
+shutil.copytree(ROOT / "web/browser", OUT / "browser")
 shutil.copytree(ROOT / "capri_project_capricorn", OUT / "capri_project_capricorn")
 shutil.move(OUT / "web/3d/index.html", OUT / "index.html")
 
@@ -34,14 +35,19 @@ def edit(path, replacements):
     file.write_text(text)
 
 
-config = json.dumps({"manualLocal": True, "apiBase": "http://127.0.0.1:8777"})
+config = json.dumps({
+    "manualLocal": True,
+    "apiBase": "http://127.0.0.1:8777",
+    "browserWorkerUrl": f"{PREFIX}/browser/v1/inference.worker.js",
+})
 guide = (ROOT / "web/3d/local-guide.html").read_text()
 edit("index.html", [
     ('<script type="importmap">', f'<script>window.CAPRI_CONFIG = {config};</script>\n<script type="importmap">'),
     ('"/web/vendor/three/', f'"{PREFIX}/web/vendor/three/'),
-    ('src="/web/3d/main.js"', f'src="{PREFIX}/web/3d/main.js?v=2"'),
-    ('</head>', f'<link rel="stylesheet" href="{PREFIX}/web/3d/local-guide.css?v=4">\n</head>'),
+    ('src="/web/3d/main.js"', f'src="{PREFIX}/web/3d/main.js?v=3"'),
+    ('</head>', f'<link rel="stylesheet" href="{PREFIX}/web/3d/local-guide.css?v=5">\n</head>'),
     ('<a class="hlink" href="/classic" title="The original flat chat page">CLASSIC UI</a>',
+     '<button class="local-primary" type="button" id="btn-browser-start" disabled>Start</button>\n  '
      '<button class="hlink" type="button" id="btn-run-local" aria-haspopup="dialog" aria-controls="local-guide">RUN LOCALLY</button>'),
     ('<div class="prow"><span>Flat chat</span><a href="/classic">OPEN CLASSIC UI →</a></div>',
      '<div class="prow"><span>Local setup</span><button class="local-settings-link" type="button" data-open-local>RUN LOCALLY →</button></div>'),
@@ -49,10 +55,11 @@ edit("index.html", [
     ('<span class="long">CONNECTING…</span><span class="short">LINK…</span>',
      '<span class="long">DEMO · RECORDED REPLIES</span><span class="short">DEMO</span>'),
     ('DEMO: replies are recordings made at 1.00. Start server.py to steer her live.',
-     'Demo replies are recordings. The intensity slider affects only the model running on your Mac.'),
-    ('</body>', guide + f'\n<script type="module" src="{PREFIX}/web/3d/local-guide.js?v=3"></script>\n</body>'),
+     'Demo replies are recordings. The intensity slider affects only live replies.'),
+    ('</body>', guide + f'\n<script type="module" src="{PREFIX}/web/3d/local-guide.js?v=4"></script>\n</body>'),
 ])
 edit("web/3d/main.js", [
+    ("'./chat.js'", "'./scene-chat.js?v=1'"),
     ("'/web/3d/bubble.js'", f"'{PREFIX}/web/3d/bubble.js'"),
     ("'/web/3d/city.js'", f"'{PREFIX}/web/3d/city.js'"),
     ("'/web/3d/capri.js'", f"'{PREFIX}/web/3d/capri.js'"),
@@ -67,4 +74,7 @@ edit("web/3d/chat.js", [
     ("Ask the real me, she's smarter. Start server.py.", "Ask the real me, she's smarter. Run me locally."),
     ("...Link's dead. Start server.py and try me again.", "...Link's dead. Try me again."),
 ])
-print(f"Built demo + manual local setup: {OUT}")
+edit("web/3d/scene-chat.js", [
+    ("'./chat.js'", "'./chat.js?v=3'"),
+])
+print(f"Built recorded demo, browser model and manual local setup: {OUT}")

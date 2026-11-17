@@ -687,17 +687,20 @@ function renderStatus() {
   const s = els.status, txt = s.querySelector('.txt');
   s.classList.toggle('live', mode === 'live');
   if (mode === 'connecting' || mode === 'loading' || mode === 'disconnected') {
-    const label = mode === 'loading' ? 'LOCAL MODEL LOADING' : mode === 'disconnected' ? 'LOCAL LINK OFFLINE' : 'CONNECTING LOCAL CAPRI';
+    const browser = chat.runtime === 'browser';
+    const label = browser ? mode === 'disconnected' ? 'BROWSER OFFLINE' : 'LOADING MODEL'
+      : mode === 'loading' ? 'LOCAL MODEL LOADING' : mode === 'disconnected' ? 'LOCAL LINK OFFLINE' : 'CONNECTING LOCAL CAPRI';
     txt.textContent = label;
-    s.title = mode === 'disconnected' ? 'Run locally to reconnect, or choose Use demo.' : 'Leave the Capri Terminal window open.';
+    s.title = browser ? 'Check the browser model status.' : mode === 'disconnected'
+      ? 'Run locally to reconnect, or choose Use demo.' : 'Leave the Capri Terminal window open.';
   } else if (mode === 'live') {
     const size = info && info.size ? String(info.size).toUpperCase().replace(/[^A-Z0-9.]/g, '').slice(0, 12) : '27B';
     const tps = lastTps ? ` · <b>${(+lastTps).toFixed(0)}</b> tok/s` : '';
-    txt.innerHTML = `<span class="long">LINK: LOCAL · ${size}${tps}</span><span class="short">LIVE · ${size}</span>`;
+    txt.innerHTML = `<span class="long">${chat.runtime === 'browser' ? 'LIVE IN BROWSER' : 'LINK: LOCAL'} · ${size}${tps}</span><span class="short">LIVE · ${size}</span>`;
     s.title = 'Talking to the steered model on this machine';
   } else {
     txt.innerHTML = '<span class="long">DEMO · RECORDED REPLIES</span><span class="short">DEMO</span>';
-    s.title = 'Demo: replies are recordings. Run locally to generate new replies on your Mac.';
+    s.title = 'Demo: replies are recordings.';
   }
   $('set-mode').textContent = mode === 'live' ? 'LIVE' : mode === 'demo' ? 'DEMO' : mode === 'loading' ? 'LOADING' : 'OFFLINE';
   // the dose only steers the live model: in demo mode the slider is dimmed and says so
@@ -707,10 +710,10 @@ function renderStatus() {
 }
 
 // dose
-function setDoseRange(min, max, def) {
+function setDoseRange(min, max, def, step = max - min > 3 ? 0.1 : 0.05) {
   const d = els.dose;
   d.min = min; d.max = max;
-  d.step = max - min > 3 ? 0.1 : 0.05;
+  d.step = step;
   $('tick-min').textContent = (+min).toFixed(1).replace(/\.0$/, '');
   $('tick-max').textContent = (+max).toFixed(1).replace(/\.0$/, '');
   const saved = store.get('dose', null);
@@ -952,11 +955,12 @@ const chat = createChat({
   onMode(m, inf) {
     const was = mode; mode = m; if (inf) info = inf;
     if (was !== m) { lastTps = 0; resetConversation(false); }
-    if (inf && m === 'live') setDoseRange(inf.min_dose ?? 0, inf.max_dose ?? 1.2, inf.default_dose ?? 1);
+    const browser = chat.runtime === 'browser';
+    if (inf && m === 'live') setDoseRange(inf.min_dose ?? 0, inf.max_dose ?? 1.2, inf.default_dose ?? 1, browser ? 0.01 : undefined);
     renderStatus();
     // toasts only for real changes after the first mode was decided (not on the initial probe)
-    if (m === 'disconnected') toast('Local connection lost. Run locally to retry, or choose Use demo.', 'LINK', 8000);
-    else if (m === 'live') toast('Local Capri connected. Starting a new conversation.', 'LINK');
+    if (m === 'disconnected' && !browser) toast('Local connection lost. Run locally to retry, or choose Use demo.', 'LINK', 8000);
+    else if (m === 'live' && !browser) toast('Local Capri connected. Starting a new conversation.', 'LINK');
     else if (m === 'demo' && was !== 'connecting') toast('Demo mode · recorded replies. Starting a new conversation.', 'DEMO');
   },
   onStart() {},

@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { setImmediate as tick } from 'node:timers/promises';
+import { createChat } from '../web/3d/chat.js';
+import { createChat as createHostedChat } from '../web/3d/scene-chat.js';
 
-const source = await readFile(new URL('../web/3d/chat.js', import.meta.url), 'utf8');
-const { createChat } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const info = (status = 'ready') => ({ protocol: 'capri-local-v1', status, ready: status === 'ready',
   message: status === 'loading' ? 'Downloading the model…' : 'Capri is ready.', size: '27B',
   min_dose: 0, max_dose: 1.2, default_dose: 0.74 });
@@ -15,7 +14,7 @@ function setPermission(state) {
     permissions: { query: async () => ({ state }) },
   } });
 }
-async function fixture(t, handler, options = {}) {
+async function fixture(t, handler, options = {}, createClient = createChat) {
   const previousFetch = globalThis.fetch;
   setPermission('prompt');
   const requests = [];
@@ -24,7 +23,7 @@ async function fixture(t, handler, options = {}) {
     if (String(url).endsWith('/demo_lines.json')) return json([{ q: 'demo sample', a: 'RECORDED DEMO' }]);
     return handler(String(url), init);
   };
-  const client = createChat({ manualLocal: true, pollMs: 1, monitorMs: 60000, ...options });
+  const client = createClient({ manualLocal: true, pollMs: 1, monitorMs: 60000, ...options });
   t.after(async () => {
     client.destroy();
     await tick();
@@ -165,4 +164,45 @@ test('older Chromium enum falls back to local without extra network attempts', a
   const localRequests = requests.filter(({ url }) => url.startsWith('http://127.0.0.1'));
   assert.equal(localRequests.length, 1);
   assert.equal(localRequests[0].init.targetAddressSpace, 'local');
+});
+
+test('browser chat bypasses loopback permission and switches cleanly to Terminal', async (t) => {
+  let worker, browserRequest, nativeRequest;
+  const workerDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'Worker');
+  globalThis.Worker = class {
+    constructor() { worker = this; }
+    terminate() { this.terminated = true; }
+    postMessage(message) {
+      const { type, requestId } = message;
+      if (type === 'generate') {
+        browserRequest = message;
+        this.onmessage({ data: { type: 'token', requestId, text: 'Café, choom.' } });
+      }
+      this.onmessage({ data: { type: 'result', requestId, value: {} } });
+    }
+  };
+  t.after(() => {
+    if (workerDescriptor) Object.defineProperty(globalThis, 'Worker', workerDescriptor);
+    else delete globalThis.Worker;
+  });
+  const { client, requests } = await fixture(t, (url, init) => {
+    if (url.endsWith('/info')) return json(info());
+    nativeRequest = JSON.parse(init.body);
+    return sse('Terminal reply');
+  }, {}, createHostedChat);
+
+  setPermission('denied');
+  assert.equal(worker, undefined);
+  assert.equal(await client.connectBrowser(), true);
+  assert.equal(client.info.runtime, 'browser');
+  assert.equal((await client.send('Private browser prompt', 0)).reply, 'Café, choom.');
+  assert.equal(browserRequest.dose, 0);
+  assert.equal(requests.length, 1);
+
+  setPermission('granted');
+  assert.equal(await client.connect(), true);
+  assert.equal(worker.terminated, true);
+  assert.equal((await client.send('Terminal prompt')).reply, 'Terminal reply');
+  assert.deepEqual(nativeRequest.messages, [{ role: 'user', content: 'Terminal prompt' }]);
+  assert.equal(requests.at(-1).init.targetAddressSpace, 'loopback');
 });

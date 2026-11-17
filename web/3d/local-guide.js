@@ -1,7 +1,10 @@
-// Hosted demo's optional setup panel. No loopback fetch occurs in this module.
+// Hosted Capri controls. Both live engines start only after a click.
 const byId = (id) => document.getElementById(id);
 const guide = byId('local-guide'), intro = byId('local-intro');
 const connectButton = byId('local-connect');
+const model = byId('browser-model'), startButton = byId('btn-browser-start');
+const browserButtons = [startButton, byId('intro-start')];
+const retryButton = byId('browser-retry');
 const introVersion = '2';
 let returnFocus = null, chat = null;
 function openGuide() {
@@ -17,7 +20,40 @@ function closeIntro() {
   intro.close();
   try { localStorage.setItem('capri.web-intro-seen', introVersion); } catch { /* private browser */ }
 }
+function startBrowser() {
+  if (!chat) return;
+  if (intro.open) closeIntro();
+  if (chat.runtime === 'browser' && chat.mode === 'live') {
+    useDemo();
+    return;
+  }
+  navigator.storage?.persist?.().catch(() => {});
+  if (!model.open) model.showModal();
+  chat.connectBrowser();
+}
+function useDemo() {
+  model.close();
+  chat?.disconnect();
+  startButton.focus();
+}
 function render(state) {
+  const browser = state.runtime === 'browser';
+  const browserReady = browser && state.status === 'ready';
+  startButton.textContent = browserReady ? 'Use demo' : 'Start';
+  startButton.title = browserReady ? 'Unload the browser model and use recorded replies' : 'Run in Chrome · first download 15.23 GB';
+  if (browser) {
+    const feedback = byId('browser-feedback');
+    feedback.dataset.state = state.status;
+    byId('browser-message').textContent = state.message;
+    retryButton.hidden = !['error', 'lost'].includes(state.status);
+    if (browserReady && model.open) {
+      model.close();
+      byId('input').focus();
+    } else if (state.status === 'lost' && !model.open && !guide.open) {
+      model.showModal();
+    }
+    state = { status: 'idle', message: 'Connect here to switch to the Terminal setup.' };
+  }
   const names = { idle: 'Demo mode', connecting: 'Requesting local connection', loading: 'Capri is loading',
     ready: 'Local Capri connected', denied: 'Browser permission blocked', lost: 'Local connection lost', error: 'Cannot connect yet' };
   byId('local-feedback').dataset.state = state.status;
@@ -27,10 +63,17 @@ function render(state) {
   connectButton.disabled = waiting || state.status === 'ready' || !chat;
   connectButton.textContent = state.status === 'ready' ? 'Connected' : waiting ? 'Waiting for Capri…'
     : ['error', 'denied', 'lost'].includes(state.status) ? 'Try connecting again' : 'Connect local Capri';
-  byId('local-demo').textContent = state.status === 'idle' ? 'Back to demo' : 'Disconnect · use demo';
+  byId('local-demo').textContent = state.status === 'idle' && !browser ? 'Back to demo' : 'Disconnect · use demo';
   byId('local-remedy').hidden = !['error', 'denied', 'lost'].includes(state.status);
 }
-function attach(client) { chat = client; render(chat.connection); }
+function attach(client) {
+  chat = client;
+  for (const button of browserButtons) button.disabled = false;
+  render(chat.connection);
+}
+for (const button of [...browserButtons, retryButton]) button.addEventListener('click', startBrowser);
+byId('browser-demo').addEventListener('click', useDemo);
+model.addEventListener('cancel', (event) => { event.preventDefault(); useDemo(); });
 for (const button of document.querySelectorAll('[data-open-local], #btn-run-local')) button.addEventListener('click', openGuide);
 byId('local-close').addEventListener('click', closeGuide);
 byId('intro-demo').addEventListener('click', closeIntro);

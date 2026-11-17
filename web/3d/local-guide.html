@@ -1,12 +1,25 @@
 <dialog id="local-intro" class="local-dialog local-intro" aria-labelledby="intro-title" aria-describedby="intro-description">
   <div class="local-kicker">PROJECT CAPRICORN</div>
-  <h2 id="intro-title" tabindex="-1" autofocus>DEMO ONLY</h2>
-  <p id="intro-description">This demo matches what you type to recorded replies, with a few preset lines for greetings and unmatched questions. To generate new replies, run Capri on your Mac.</p>
+  <h2 id="intro-title" tabindex="-1" autofocus>Talk to Capri.</h2>
+  <p id="intro-description">Start the steered 27B model in desktop Chrome. The first download is 15.23 GB and Chrome saves it for future visits. The demo uses recorded replies.</p>
   <div class="local-actions">
-    <button type="button" class="local-primary" id="intro-demo">Try the demo</button>
+    <button type="button" class="local-primary" id="intro-start">Start</button>
+    <button type="button" class="local-secondary" id="intro-demo">Try the demo</button>
     <button type="button" class="local-secondary" id="intro-setup">Run locally</button>
   </div>
   <p class="local-footnote"><a href="https://github.com/MaxW3n/capri" target="_blank" rel="noopener noreferrer">GitHub ↗</a> · <a href="https://huggingface.co/MaxW3n/capri-steering" target="_blank" rel="noopener noreferrer">Hugging Face ↗</a></p>
+</dialog>
+
+<dialog id="browser-model" class="local-dialog local-intro" aria-labelledby="browser-title">
+  <h2 id="browser-title">Capri in Chrome</h2>
+  <p>Chrome saves the 15.23 GB model on this device for future visits.</p>
+  <div class="local-feedback" id="browser-feedback" role="status" aria-atomic="true">
+    <p id="browser-message"></p>
+  </div>
+  <div class="local-actions">
+    <button type="button" class="local-primary" id="browser-retry" hidden>Retry</button>
+    <button type="button" class="local-secondary" id="browser-demo" autofocus>Use demo</button>
+  </div>
 </dialog>
 
 <dialog id="local-guide" class="local-dialog" aria-labelledby="local-title" aria-describedby="local-summary">

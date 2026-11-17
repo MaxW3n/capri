@@ -53,3 +53,7 @@ button.hlink { color: var(--white); background: none; border: 0; cursor: pointer
 @media (prefers-reduced-motion: reduce) { .local-dialog * { transition: none !important; } }
 
 .local-settings-link { border: 0; background: transparent; color: var(--green); font: 12px/1.4 var(--mono); cursor: pointer; min-height: 44px; padding: 4px 0; }
+
+#btn-browser-start { flex: none; text-transform: uppercase; min-width: 56px; padding-inline: 9px; white-space: nowrap; }
+#btn-browser-start:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+@media (max-width: 375px) { #btn-browser-start { padding-inline: 6px; min-width: 44px; } }
