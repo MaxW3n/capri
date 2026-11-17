@@ -5,6 +5,7 @@ import { AutoTokenizer, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@
 const ORT_DIST = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.0-dev.20260914-8d85527a0/dist/';
 const MAX_CONTEXT_TOKENS = 4096;
 const MAX_MESSAGE_CHARS = 32768;
+const WEIGHT_RETRY_DELAYS = [1000, 3000];
 let session, tokenizer, chatTemplate, config, graph, bindings, device, modelRoot, steering;
 let releaseModelLock;
 let activeRequestId = 0;
@@ -17,14 +18,18 @@ function log(level, ...args) {
   else console[level](...args);
 }
 function heap() { return performance.memory ? { usedJSHeapSize: performance.memory.usedJSHeapSize } : null; }
+class TransferError extends Error {}
 async function fetchAsset(url, name, options) {
   let response;
   try {
     response = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', ...options });
   } catch (error) {
-    throw new Error(`Could not reach ${name}. Check your connection and retry.`, { cause: error });
+    throw new TransferError(`Could not reach ${name}. Check your connection and retry.`, { cause: error });
   }
-  if (!response.ok) throw new Error(`Could not load ${name} (HTTP ${response.status}). Try again later.`);
+  if (!response.ok) {
+    const ErrorType = [408, 500, 502, 503, 504].includes(response.status) ? TransferError : Error;
+    throw new ErrorType(`Could not load ${name} (HTTP ${response.status}). Try again later.`);
+  }
   return response;
 }
 async function json(url, name) { return (await fetchAsset(url, name)).json(); }
@@ -79,15 +84,82 @@ async function loadWeights(model, manifest) {
     log('info', `Saved ${gb(saved)} of ${gb(totalBytes)} GB (${count}/${shards.length} files)…`);
   }
   async function saveShard({ shard, index }) {
-    const response = await fetchAsset(shard.url, `model file ${shard.path}`, { cache: 'no-store' });
+    const transfer = new AbortController();
+    const maxAttempts = WEIGHT_RETRY_DELAYS.length + 1;
+    let offset = 0, attempts = 0, reader, lastError, streamError, saving = false;
+    async function open() {
+      while (attempts < maxAttempts) {
+        if (attempts) {
+          log('info', `Reconnecting model file ${index + 1}/${shards.length} (${attempts + 1}/${maxAttempts})…`);
+          await new Promise(resolve => setTimeout(resolve, WEIGHT_RETRY_DELAYS[attempts - 1]));
+        }
+        transfer.signal.throwIfAborted();
+        if (attempts) report.weightDownloadRetries++;
+        attempts++;
+        let response;
+        try {
+          response = await fetchAsset(shard.url, `model file ${shard.path}`, {
+            cache: 'no-store', signal: transfer.signal,
+            headers: offset ? { Range: `bytes=${offset}-` } : undefined,
+          });
+        } catch (error) {
+          if (!(error instanceof TransferError)) throw error;
+          lastError = error;
+          continue;
+        }
+        const expectedStatus = offset ? 206 : 200;
+        const expectedRange = `bytes ${offset}-${shard.bytes - 1}/${shard.bytes}`;
+        if (response.status !== expectedStatus || (offset && response.headers.get('Content-Range') !== expectedRange)
+            || !response.body) {
+          throw new Error(`The model host returned an unexpected response for ${shard.path}. Retry to fetch the missing files.`);
+        }
+        return response.body.getReader();
+      }
+      throw new Error(`Could not download ${shard.path} after ${maxAttempts} attempts. Check your connection and retry. Completed files are saved.`, { cause: lastError });
+    }
     try {
-      // Cache.put consumes the body before it commits the entry. Completed files survive a retry.
-      await cache.put(shard.url, response);
+      reader = await open();
+      // Cache.put rejects 206 responses. Feed it one complete stream with no shard-sized JS buffer.
+      const body = new ReadableStream({
+        async pull(controller) {
+          try {
+            while (true) {
+              let chunk;
+              try { chunk = await reader.read(); }
+              catch (error) { lastError = error; }
+              if (chunk && !chunk.done) {
+                offset += chunk.value.byteLength;
+                if (offset > shard.bytes) throw new Error(`The model host sent too many bytes for ${shard.path}.`);
+                controller.enqueue(chunk.value);
+                return;
+              }
+              reader.releaseLock();
+              reader = undefined;
+              if (chunk?.done && offset === shard.bytes) {
+                controller.close();
+                return;
+              }
+              if (offset === shard.bytes) throw lastError;
+              reader = await open();
+            }
+          } catch (error) {
+            streamError = error;
+            controller.error(error);
+          }
+        },
+        cancel() { transfer.abort(); },
+      });
+      saving = true;
+      await cache.put(shard.url, new Response(body, { headers: { 'Content-Type': 'application/octet-stream' } }));
     } catch (error) {
+      if (streamError) throw streamError;
+      if (!saving) throw error;
       if (error.name === 'QuotaExceededError') {
         throw new Error(`Chrome ran out of storage while saving ${shard.path}. Free disk space and retry. Completed files are saved.`, { cause: error });
       }
       throw new Error(`Could not save ${shard.path}. Check the connection and available disk space, then retry. Completed files are saved.`, { cause: error });
+    } finally {
+      transfer.abort();
     }
     const data = await cachedBlob(shard);
     if (data?.size !== shard.bytes) {
@@ -164,7 +236,7 @@ async function loadModel() {
   if (typeof Float16Array !== 'function') throw new Error('Your browser does not support FP16 model inputs.');
   report.status = 'loading';
   report.messages = [];
-  Object.assign(report, { weightCacheHits: 0, weightCacheMisses: 0, cachedWeightBytes: 0, networkWeightBytes: 0 });
+  Object.assign(report, { weightCacheHits: 0, weightCacheMisses: 0, cachedWeightBytes: 0, networkWeightBytes: 0, weightDownloadRetries: 0 });
   log('info', 'Preparing WebGPU device…');
   if (!navigator.gpu) throw new Error('WebGPU is unavailable. Open Capri over HTTPS in current Chrome or Edge with graphics acceleration enabled.');
   const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
